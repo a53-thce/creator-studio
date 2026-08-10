@@ -1,5 +1,7 @@
 /* 服务工作者：缓存应用外壳，让工作台可离线使用；API 走网络优先 + 缓存兜底 */
-const CACHE = 'mcw-shell-v23';
+const CACHE = 'mcw-shell-v24';
+/* 注意：data-daily.js 不放进 SHELL 预缓存，否则安装时会冻一份旧快照；
+   它只走 FRESH 网络优先（见下方），每天都会被重新拉取 */
 const SHELL = [
   './',
   './index.html',
@@ -12,8 +14,6 @@ const SHELL = [
   './assets/js/data-content.js',
   './assets/js/data-tcm.js',
   './assets/js/data-videos.js'
-  /* 注意：data-daily.js 不放进 SHELL 预缓存，否则安装时会冻一份旧快照；
-     它只走 FRESH 网络优先（见下方），每天都会被重新拉取 */
 ];
 const API = ['open-meteo.com', '60s.viki.moe', 'allorigins.win', 'quotable.io', 'openlibrary.org', 'hnrss.org', 'covers.openlibrary.org'];
 /* 每天都会被重新抓取覆盖的文件：必须网络优先，否则用户会一直吃到昨天的缓存 */
