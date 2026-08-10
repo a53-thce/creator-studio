@@ -1,5 +1,5 @@
 /* 服务工作者：缓存应用外壳，让工作台可离线使用；API 走网络优先 + 缓存兜底 */
-const CACHE = 'mcw-shell-v25';
+const CACHE = 'mcw-shell-v27';
 /* 注意：data-daily.js 不放进 SHELL 预缓存，否则安装时会冻一份旧快照；
    它只走 FRESH 网络优先（见下方），每天都会被重新拉取 */
 const SHELL = [
@@ -61,13 +61,15 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
+  // 外壳文件（index.html/app.js/style.css 等）：网络优先，离线才回落缓存。
+  // 这样每次打开都会拉最新版，旧的“冻住”页面问题不再发生（仍保留离线兜底）。
   e.respondWith(
-    caches.match(e.request).then(hit =>
-      hit || fetch(e.request).then(r => {
+    fetch(e.request, { cache: 'no-store' })
+      .then(r => {
         const copy = r.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
         return r;
-      }).catch(() => caches.match('./index.html'))
-    )
+      })
+      .catch(() => caches.match(e.request).then(hit => hit || caches.match('./index.html')))
   );
 });
