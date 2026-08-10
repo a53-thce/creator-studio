@@ -109,8 +109,12 @@
 <script src="assets/js/app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
+    var __swReg = null;
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+        __swReg = reg;
+        /* 注册后立即主动检查一次新版本（对已安装到主屏幕的独立 App 尤为关键） */
+        try { reg.update(); } catch (e) {}
         /* 检测到新版本：标记后，待其接管时自动重载（最多每天一次，不弹窗打扰） */
         if (reg && reg.addEventListener) {
           reg.addEventListener('updatefound', function () {
@@ -122,6 +126,8 @@
             });
           });
         }
+        /* 每小时主动轮询一次：补偿 iOS/Android 对已安装 PWA 的迟钝更新 */
+        setInterval(function () { try { reg.update(); } catch (e) {} }, 60 * 60 * 1000);
       }).catch(function () {});
       var refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', function () {
