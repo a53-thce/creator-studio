@@ -26,7 +26,7 @@ window.document.documentElement.innerHTML='<head></head><body>'+bodyMatch[1].rep
 
 /* 三个文件拼到同一次 eval：顶层 const 在单次 eval 内共享词法作用域，
    这样 data-*.js 声明的 QUOTES/WORDS 等常量能被 app.js 的 IIFE 闭包访问到。 */
-const full = ['assets/js/data-english.js','assets/js/data-content.js','assets/js/data-tcm.js','assets/js/data-videos.js','assets/js/app.js']
+const full = ['assets/js/data-english.js','assets/js/data-content.js','assets/js/data-tcm.js','assets/js/data-videos.js','assets/js/data-daily.js','assets/js/app.js']
   .map(f=>fs.readFileSync(path.join(base,f),'utf8')).join('\n;\n');
 try{ window.eval(full); }catch(e){ errs.push('eval all: '+e.message); }
 
@@ -130,6 +130,23 @@ window.location.hash='#/style'; window.dispatchEvent(new window.Event('hashchang
 const seg=window.document.querySelectorAll('[data-seg]')[1];
 seg.dispatchEvent(new window.Event('click',{bubbles:true}));
 console.log('妆容分组切换后长度 =', window.document.querySelector('#view').innerHTML.length);
+
+// 每日自动抓取内容卡片（data-daily.js）
+window.location.hash='#/plan'; window.dispatchEvent(new window.Event('hashchange'));
+{
+  const hot=window.document.querySelectorAll('#view .hot-item').length;
+  const dg=window.document.querySelectorAll('#view .dg-item').length;
+  console.log('首页 今日热闻卡 =', hot, ' 合辑卡 =', dg);
+  if(hot<1) errs.push('首页缺少今日热闻卡（.hot-item）');
+  if(dg<1) errs.push('首页缺少今日份新内容合辑（.dg-item）');
+}
+['ai','speech','book','fit'].forEach(sec=>{
+  window.location.hash='#/'+sec; window.dispatchEvent(new window.Event('hashchange'));
+  const box=window.document.querySelectorAll('#view .daily-box').length;
+  const dn=window.document.querySelectorAll('#view .dn-item').length;
+  console.log('栏目', sec, '→ daily-box', box, ' 图文卡', dn);
+  if(box<1) errs.push('栏目缺少今日新增框: '+sec);
+});
 
 console.log('\n===== 错误 =====');
 console.log(errs.length? errs.join('\n') : '无 ✅');

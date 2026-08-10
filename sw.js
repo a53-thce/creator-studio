@@ -1,5 +1,5 @@
 /* 服务工作者：缓存应用外壳，让工作台可离线使用；API 走网络优先 + 缓存兜底 */
-const CACHE = 'mcw-shell-v20';
+const CACHE = 'mcw-shell-v22';
 const SHELL = [
   './',
   './index.html',
@@ -11,9 +11,12 @@ const SHELL = [
   './assets/js/data-english.js',
   './assets/js/data-content.js',
   './assets/js/data-tcm.js',
-  './assets/js/data-videos.js'
+  './assets/js/data-videos.js',
+  './assets/js/data-daily.js'
 ];
 const API = ['open-meteo.com', '60s.viki.moe', 'allorigins.win', 'quotable.io', 'openlibrary.org', 'hnrss.org', 'covers.openlibrary.org'];
+/* 每天都会被重新抓取覆盖的文件：必须网络优先，否则用户会一直吃到昨天的缓存 */
+const FRESH = ['/assets/js/data-daily.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -44,6 +47,19 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (e.request.method !== 'GET') return;
+  // 每日更新的数据文件：先拿网络最新版，拿不到再回落缓存（离线可用）
+  if (FRESH.some(p => url.pathname.endsWith(p))) {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-store' })
+        .then(r => {
+          const copy = r.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+          return r;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(hit =>
       hit || fetch(e.request).then(r => {

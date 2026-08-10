@@ -164,6 +164,89 @@ function videoCard(sec,key){
   </div>`;
 }
 
+/* ---------------- 今日新增（每日自动抓取的真实新内容） ---------------- */
+function dailyData(sec){
+  const D=window.DAILY;
+  if(!D||!D.secs||!D.secs[sec]) return null;
+  const d=D.secs[sec];
+  if((!d.vids||!d.vids.length)&&(!d.news||!d.news.length)) return null;
+  return d;
+}
+/* 新抓到的视频，样式与配套视频卡一致，点击同样在卡内播放 */
+function freshVideoCard(v){
+  if(!v||!v.bv) return '';
+  const cover=v.cover?` style="background-image:url('${safeCover(v.cover)}')"`:'';
+  const play=v.play>10000?(Math.round(v.play/10000*10)/10+'万播放'):(v.play?v.play+'播放':'');
+  return `<div class="vcard" data-bv="${esc(v.bv)}">
+    <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>点击在这里播放</span></div>
+    <div class="vc-thumb"${cover}><span class="vc-play">▶</span></div>
+    <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
+    <div class="vc-hint">${play?esc(play)+' · ':''}来源 B 站 · 今日抓取</div>
+  </div>`;
+}
+function dailyBox(sec){
+  const d=dailyData(sec); if(!d) return '';
+  const D=window.DAILY;
+  const vids=(d.vids||[]).slice(0,4).map(freshVideoCard).join('');
+  const news=(d.news||[]).slice(0,3).map(n=>{
+    const cov=n.cover?`<span class="dn-thumb" style="background-image:url('${safeCover(n.cover)}')"></span>`
+      :`<span class="dn-thumb dn-thumb--ico">📰</span>`;
+    return `<a class="dn-item" href="${esc(n.url||'#')}" target="_blank" rel="noopener">
+      ${cov}<span class="dn-main"><span class="dn-t">${esc(n.t)}</span>
+      ${n.desc?`<span class="dn-desc">${esc(n.desc)}</span>`:''}
+      <span class="dn-src">${esc(n.src||'资讯')}</span></span>
+    </a>`;
+  }).join('');
+  return `<div class="daily-box">
+    <div class="db-head"><span class="db-ico">🆕</span><b>今日新增</b>
+      <span class="db-badge">${esc((D.date||'').slice(5))} 抓取</span></div>
+    ${news?`<div class="dn-list">${news}</div>`:''}
+    ${vids}
+    ${vids?'':'<div class="tiny muted" style="padding:4px 2px">今天这个栏目的新视频还在路上～</div>'}
+  </div>`;
+}
+/* 首页合辑：把当天各栏目抓到的新内容汇总成一张卡 */
+function dailyDigest(){
+  const D=window.DAILY;
+  if(!D||!Array.isArray(D.digest)||!D.digest.length) return '';
+  const items=D.digest.map(it=>{
+    const inner=`<span class="dg-ico">${it.ico||'✨'}</span>
+      <span class="dg-body"><span class="dg-sec">${esc(it.name||'')}</span>
+      <span class="dg-t">${esc(it.t||'')}</span></span>`;
+    return it.type==='v'
+      ? `<button class="dg-item" data-go="${esc(it.sec)}">${inner}<span class="dg-go">看视频 ›</span></button>`
+      : `<a class="dg-item" href="${esc(it.url||'#')}" target="_blank" rel="noopener">${inner}<span class="dg-go">读原文 ›</span></a>`;
+  }).join('');
+  const stale=D.date&&D.date!==TODAY;
+  return `<div class="card digest">
+    <div class="dg-head"><b>📦 今日份新内容</b>
+      <span class="pill ${stale?'grey':'mint'}">${esc(D.date||'')}${stale?' · 待更新':' · 已更新'}</span></div>
+    <div class="dg-list">${items}</div>
+    <div class="tiny muted" style="margin-top:9px">每天早上 8:00 自动抓取各栏目的真实新内容</div>
+  </div>`;
+}
+/* 首页：今日热闻 · 图文精选（知乎热榜/微博热搜/每日要闻，每天刷新） */
+function dailyHot(){
+  const D=window.DAILY;
+  if(!D||!Array.isArray(D.hot)||!D.hot.length) return '';
+  const items=D.hot.map(h=>{
+    const cov=h.cover?`<span class="hot-thumb" style="background-image:url('${safeCover(h.cover)}')"></span>`
+      :`<span class="hot-thumb hot-thumb--ico">📰</span>`;
+    return `<a class="hot-item" href="${esc(h.url||'#')}" target="_blank" rel="noopener">
+      ${cov}<span class="hot-main"><span class="hot-t">${esc(h.t)}</span>
+      ${h.desc?`<span class="hot-desc">${esc(h.desc)}</span>`:''}
+      <span class="hot-src">${esc(h.src||'资讯')}</span></span>
+    </a>`;
+  }).join('');
+  const stale=D.date&&D.date!==TODAY;
+  return `<div class="card hot-box">
+    <div class="dg-head"><b>📰 今日热闻 · 图文精选</b>
+      <span class="pill ${stale?'grey':'mint'}">${esc(D.date||'')}${stale?' · 待更新':' · 已更新'}</span></div>
+    <div class="hot-list">${items}</div>
+    <div class="tiny muted" style="margin-top:9px">来自知乎热榜 / 微博热搜 / 每日要闻，每天自动刷新</div>
+  </div>`;
+}
+
 /* 分组分段渲染 */
 function groupPage(sec,data,opt){
   opt=opt||{};
@@ -185,7 +268,7 @@ function groupPage(sec,data,opt){
       <div class="wrap">${opt.keywords.map(k=>`<button class="pill grey" data-kw="${esc(k)}" style="padding:6px 11px;font-size:12px">${esc(k)}</button>`).join('')}</div>
       <div class="tiny muted" style="margin-top:9px">点击关键词 → 选择平台跳转检索</div></div>`;
   }
-  return `${opt.head||''}${kw}${daily}<div class="segs">${segs}</div>${
+  return `${opt.head||''}${kw}${dailyBox(sec)}${daily}<div class="segs">${segs}</div>${
     list.map((it,i)=>contentCard(sec,it,i)).join('')||emptyMascot('这个栏目今天还空空哒～','换个分组，或点上面的关键词去各平台找找灵感吧')}`;
 }
 
@@ -233,6 +316,10 @@ function pagePlan(){
   </div>
 
   ${liveBox('plan','🔥 今日热搜 · 选题灵感')}
+
+  ${dailyDigest()}
+
+  ${dailyHot()}
 
   <div class="stats">
     <div class="stat"><b>${streak}</b><span>连续打卡（天）</span></div>
@@ -1147,6 +1234,11 @@ function bindCommon(){
   v.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{
     const it=JSON.parse(b.dataset.fav);
     const on=toggleFav(it); b.classList.toggle('on',on); b.textContent=on?'★':'☆';
+  });
+  /* 今日份新内容合辑：跳到对应栏目 */
+  v.querySelectorAll('button[data-go]').forEach(b=>b.onclick=()=>{
+    location.hash='#/'+b.dataset.go;
+    window.scrollTo(0,0);
   });
   v.querySelectorAll('[data-kw]').forEach(b=>b.onclick=()=>{
     const k=b.dataset.kw;
