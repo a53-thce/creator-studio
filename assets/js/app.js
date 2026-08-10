@@ -247,6 +247,33 @@ function dailyHot(){
   </div>`;
 }
 
+/* 在已打开的标签页里静默刷新「每日新内容」。
+   手机切回标签页 / 定时都会触发，不必整页重载，直接换数据并重绘 daily 区块。
+   这样即便后端已更新，挂着的标签页也能拿到当天内容。 */
+let _dailySig='';
+function dailySig(D){
+  if(!D) return '';
+  return D.date+'|'+(D.digest||[]).length+'|'+(D.hot||[]).length+'|'+
+    Object.keys(D.secs||{}).map(s=>((D.secs[s].vids||[]).length)+'/'+(D.secs[s].news||[]).length).join(',');
+}
+async function refreshDaily(quiet){
+  try{
+    const res=await fetch('assets/js/data-daily.js?_='+Date.now(),{cache:'no-store'});
+    if(!res.ok) return false;
+    const txt=await res.text();
+    if(!/window\.DAILY\s*=/.test(txt)) return false;
+    const g={}; new Function('window',txt)(g);
+    const nd=g.DAILY; if(!nd||!nd.date) return false;
+    const sig=dailySig(nd);
+    if(sig===_dailySig) return false;                 // 内容没变，跳过
+    const changed=!window.DAILY||window.DAILY.date!==nd.date;
+    window.DAILY=nd; _dailySig=sig;
+    if(typeof render==='function') render();
+    if(!quiet) toast(changed?('✨ 已更新到 '+nd.date+' 的新内容'):'🔄 已刷新今日内容');
+    return true;
+  }catch(e){ return false; }
+}
+
 /* 分组分段渲染 */
 function groupPage(sec,data,opt){
   opt=opt||{};
@@ -1367,10 +1394,17 @@ function init(){
   $('#modalClose').onclick=closeModal;
   $('#favSheet').onclick=e=>{ if(e.target.id==='favSheet') $('#favSheet').classList.remove('show'); };
   $('#modal').onclick=e=>{ if(e.target.id==='modal') closeModal(); };
+  $('#refreshBtn').onclick=()=>refreshDaily(false);   // 顶栏手动刷新今日内容
   window.addEventListener('hashchange',()=>{ enPos=0; render(); });
-  document.addEventListener('visibilitychange',()=>{ if(document.hidden) { try{speechSynthesis.cancel();}catch(e){} stopRec(); } });
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden){ try{speechSynthesis.cancel();}catch(e){} stopRec(); }
+    else { refreshDaily(true); }   // 手机切回标签页：静默拉取最新每日内容并重绘
+  });
   $('#footNote').textContent='自媒体创作工作台 · 数据保存在本机 · '+TODAY;
+  _dailySig=dailySig(window.DAILY);   // 记录初始签名，避免首次重复刷新
   render();
+  /* 每 5 分钟静默检查一次每日新内容（后台标签页也会生效） */
+  setInterval(()=>refreshDaily(true), 5*60*1000);
   /* 后台预热天气与新闻缓存 */
   setTimeout(()=>{ const c=DB.get('wx',null); if(!c||Date.now()-c.time>3600000) fetch('https://api.open-meteo.com/v1/forecast?latitude=31.6538&longitude=120.7526&current=temperature_2m,weather_code&timezone=Asia%2FShanghai').catch(()=>{}); },1500);
 

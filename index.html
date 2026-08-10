@@ -59,6 +59,9 @@
         <h1 id="pageTitle">每日计划</h1>
         <p id="pageSub">今天也要好好生活呀</p>
       </div>
+      <button class="tb-btn" id="refreshBtn" aria-label="刷新今日内容">
+        <svg viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>
+      </button>
       <button class="tb-btn" id="favBtn" aria-label="收藏夹">
         <svg viewBox="0 0 24 24"><path d="M12 17.3l-6.2 3.7 1.7-7L2 9.2l7.1-.6L12 2l2.9 6.6 7.1.6-5.5 4.8 1.7 7z"/></svg>
         <em class="tb-badge" id="favCount">0</em>
@@ -107,7 +110,24 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js').catch(function () {});
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+        /* 检测到新版本：标记后，待其接管时自动重载（最多每天一次，不弹窗打扰） */
+        if (reg && reg.addEventListener) {
+          reg.addEventListener('updatefound', function () {
+            var nw = reg.installing; if (!nw) return;
+            nw.addEventListener('statechange', function () {
+              if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                window.__swUpdated = true;
+              }
+            });
+          });
+        }
+      }).catch(function () {});
+      var refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (refreshing || !window.__swUpdated) return;
+        refreshing = true; location.reload();
+      });
     });
   }
 </script>
