@@ -1,0 +1,17 @@
+{
+  "name": "自媒体创作工作台",
+  "short_name": "创作台",
+  "description": "手机端自媒体创作工作台：每日计划、英语学习、养生、资讯、AI 学习一站式",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FDF7F5",
+  "theme_color": "#C8384B",
+  "icons": [
+    { "src": "assets/img/mascot.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "assets/img/mascot.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
