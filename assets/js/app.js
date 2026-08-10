@@ -256,14 +256,33 @@ function dailySig(D){
   return D.date+'|'+(D.digest||[]).length+'|'+(D.hot||[]).length+'|'+
     Object.keys(D.secs||{}).map(s=>((D.secs[s].vids||[]).length)+'/'+(D.secs[s].news||[]).length).join(',');
 }
+const DAILY_GH='https://a53-thce.github.io/creator-studio/assets/js/data-daily.js';
+/* 跨域托管（如 agentos）用脚本标签从 GitHub 拉取当日数据，避免 CORS 限制，实现免重部署自动同步 */
+function _loadDailyFromGh(){
+  return new Promise(res=>{
+    const prev=document.getElementById('__dailySrc'); if(prev) prev.remove();
+    const s=document.createElement('script');
+    s.id='__dailySrc'; s.src=DAILY_GH+'?_='+Date.now();
+    const done=()=>{ res(window.DAILY||null); };
+    s.onload=done; s.onerror=()=>res(null);
+    document.head.appendChild(s);
+  });
+}
 async function refreshDaily(quiet){
   try{
-    const res=await fetch('assets/js/data-daily.js?_='+Date.now(),{cache:'no-store'});
-    if(!res.ok) return false;
-    const txt=await res.text();
-    if(!/window\.DAILY\s*=/.test(txt)) return false;
-    const g={}; new Function('window',txt)(g);
-    const nd=g.DAILY; if(!nd||!nd.date) return false;
+    let nd;
+    if(location.hostname.indexOf('github.io')>=0){
+      /* 同源部署：直接 fetch 相对路径，无需跨域 */
+      const res=await fetch('assets/js/data-daily.js?_='+Date.now(),{cache:'no-store'});
+      if(!res.ok) return false;
+      const txt=await res.text();
+      if(!/window\.DAILY\s*=/.test(txt)) return false;
+      const g={}; new Function('window',txt)(g); nd=g.DAILY;
+    } else {
+      /* 其它托管：从 GitHub Pages 拉当日数据，自动同步 */
+      nd=await _loadDailyFromGh();
+    }
+    if(!nd||!nd.date) return false;
     const sig=dailySig(nd);
     if(sig===_dailySig) return false;                 // 内容没变，跳过
     const changed=!window.DAILY||window.DAILY.date!==nd.date;

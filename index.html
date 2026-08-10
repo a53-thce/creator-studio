@@ -105,7 +105,15 @@
 <script src="assets/js/data-content.js"></script>
 <script src="assets/js/data-tcm.js"></script>
 <script src="assets/js/data-videos.js"></script>
-<script src="assets/js/data-daily.js" onerror="window.DAILY=null"></script>
+<script>
+  /* 每日数据：GitHub Pages 部署用同源文件；其它托管（如 agentos）直接拉 GitHub Pages 的当日数据，
+     这样 GitHub 每天 8 点更新后，agentos 打开/刷新即自动同步，无需重部署 */
+  if (location.hostname.indexOf('github.io') >= 0) {
+    document.write('<script src="assets/js/data-daily.js" onerror="window.DAILY=null"><\/script>');
+  } else {
+    document.write('<script src="https://a53-thce.github.io/creator-studio/assets/js/data-daily.js?_=' + Date.now() + '" onerror="window.DAILY=null"><\/script>');
+  }
+</script>
 <script src="assets/js/app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
