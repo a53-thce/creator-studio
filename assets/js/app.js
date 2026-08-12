@@ -158,7 +158,7 @@ function videoCard(sec,key){
   const cover=v.cover?` style="background-image:url('${safeCover(v.cover)}')"`:'';
   return `<div class="vcard" data-bv="${esc(v.bv)}">
     <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>点击在内容中播放</span></div>
-    <div class="vc-thumb"${cover}><span class="vc-play">▶</span></div>
+    <div class="vc-thumb"${cover}></div>
     <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
     <div class="vc-hint">来源 B 站 · 内容相关推荐</div>
   </div>`;
@@ -179,7 +179,7 @@ function freshVideoCard(v){
   const play=v.play>10000?(Math.round(v.play/10000*10)/10+'万播放'):(v.play?v.play+'播放':'');
   return `<div class="vcard" data-bv="${esc(v.bv)}">
     <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>点击在这里播放</span></div>
-    <div class="vc-thumb"${cover}><span class="vc-play">▶</span></div>
+    <div class="vc-thumb"${cover}></div>
     <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
     <div class="vc-hint">${play?esc(play)+' · ':''}来源 B 站 · 今日抓取</div>
   </div>`;
