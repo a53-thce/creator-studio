@@ -141,9 +141,15 @@ function sectionIcon(sec){
 
 /* ---------------- 视频卡（真实 B 站视频，点击在内容中播放） ---------------- */
 const VIDEO_SECS=['speech','tcm','acup','book','style','viral','ai','baby','fit'];
-/* 点击封面后才加载的 B 站播放器（用户手势触发，autoplay 在多数 webview 可放行） */
-function biliIframeAuto(bv){
-  return `<iframe class="vc-frame" src="https://player.bilibili.com/player.html?bvid=${esc(bv)}&page=1&high_quality=1&danmaku=0&autoplay=1" allow="autoplay; fullscreen; encrypted-media" allowfullscreen="true" scrolling="no" frameborder="0"></iframe>`;
+/* 桌面直接内嵌（autoplay=0，显示 B 站封面+播放键）；移动端点击封面时才加载（autoplay=1，手势触发） */
+function biliIframeAuto(bv, autoplay){
+  autoplay = autoplay?1:0;
+  return `<iframe class="vc-frame" src="https://player.bilibili.com/player.html?bvid=${esc(bv)}&page=1&high_quality=1&danmaku=0&autoplay=${autoplay}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen="true" scrolling="no" frameborder="0"></iframe>`;
+}
+/* 桌面浏览器直接内嵌播放器（视频卡打开即见，不黑）；移动端 / webview 用封面点击，避免内核黑屏 */
+function videoUseInline(){
+  const ua=navigator.userAgent||'';
+  return !/Android|iPhone|iPad|iPod|Mobile|Windows Phone|webview|MicroMessenger/i.test(ua);
 }
 function safeCover(u){ return (u||'').replace(/["'<>]/g,''); }
 function videoCard(sec,key){
@@ -157,9 +163,13 @@ function videoCard(sec,key){
   }
   if(!v||!v.bv) return '';
   const cover=v.cover?` style="background-image:url('${safeCover(v.cover)}')"`:'';
+  const inline=videoUseInline();
+  const media = inline
+    ? `<div class="vc-frame-wrap">${biliIframeAuto(v.bv,false)}</div>`
+    : `<div class="vc-cover"${cover} data-bv="${esc(v.bv)}">${v.cover?'':'<span class="vc-cover-tip">B站视频</span>'}</div>`;
   return `<div class="vcard" data-bv="${esc(v.bv)}">
-    <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>点击封面播放</span></div>
-    <div class="vc-cover"${cover} data-bv="${esc(v.bv)}">${v.cover?'':'<span class="vc-cover-tip">B站视频</span>'}</div>
+    <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>${inline?'B 站视频 · 直接播放':'点击封面播放'}</span></div>
+    ${media}
     <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
     <div class="vc-hint">来源 B 站 · 内容相关推荐</div>
   </div>`;
@@ -178,9 +188,13 @@ function freshVideoCard(v){
   if(!v||!v.bv) return '';
   const play=v.play>10000?(Math.round(v.play/10000*10)/10+'万播放'):(v.play?v.play+'播放':'');
   const cover=v.cover?` style="background-image:url('${safeCover(v.cover)}')"`:'';
+  const inline=videoUseInline();
+  const media = inline
+    ? `<div class="vc-frame-wrap">${biliIframeAuto(v.bv,false)}</div>`
+    : `<div class="vc-cover"${cover} data-bv="${esc(v.bv)}">${v.cover?'':'<span class="vc-cover-tip">B站视频</span>'}</div>`;
   return `<div class="vcard" data-bv="${esc(v.bv)}">
-    <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>点击封面播放</span></div>
-    <div class="vc-cover"${cover} data-bv="${esc(v.bv)}">${v.cover?'':'<span class="vc-cover-tip">B站视频</span>'}</div>
+    <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>${inline?'B 站视频 · 直接播放':'点击封面播放'}</span></div>
+    ${media}
     <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
     <div class="vc-hint">${play?esc(play)+' · ':''}来源 B 站 · 今日抓取</div>
   </div>`;
@@ -1424,7 +1438,7 @@ function init(){
     if(!cover||cover.dataset.loaded) return;
     cover.dataset.loaded='1';
     cover.classList.add('is-playing');
-    cover.innerHTML=biliIframeAuto(card.dataset.bv);
+    cover.innerHTML=biliIframeAuto(card.dataset.bv, true);
     e.stopPropagation();
   });
   /* 每 5 分钟静默检查一次每日新内容（后台标签页也会生效） */
