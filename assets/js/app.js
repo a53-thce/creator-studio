@@ -141,8 +141,8 @@ function sectionIcon(sec){
 
 /* ---------------- 视频卡（真实 B 站视频，点击在内容中播放） ---------------- */
 const VIDEO_SECS=['speech','tcm','acup','book','style','viral','ai','baby','fit'];
-function biliIframe(bv){
-  return `<iframe class="vc-frame" src="https://player.bilibili.com/player.html?bvid=${esc(bv)}&page=1&high_quality=1&danmaku=0&autoplay=1" allow="autoplay; fullscreen; encrypted-media" allowfullscreen="true" scrolling="no" frameborder="0" loading="lazy"></iframe>`;
+function biliFrameInline(bv){
+  return `<div class="vc-frame-wrap"><iframe class="vc-frame" src="https://player.bilibili.com/player.html?bvid=${esc(bv)}&page=1&high_quality=1&danmaku=0&autoplay=0" allow="autoplay; fullscreen; encrypted-media" allowfullscreen="true" scrolling="no" frameborder="0" loading="lazy"></iframe></div>`;
 }
 function safeCover(u){ return (u||'').replace(/["'<>]/g,''); }
 function videoCard(sec,key){
@@ -155,10 +155,9 @@ function videoCard(sec,key){
     v=pool[Math.abs(hashStr(key||sec))%pool.length];
   }
   if(!v||!v.bv) return '';
-  const cover=v.cover?` style="background-image:url('${safeCover(v.cover)}')"`:'';
   return `<div class="vcard" data-bv="${esc(v.bv)}">
-    <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>点击在内容中播放</span></div>
-    <div class="vc-thumb"${cover}></div>
+    <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>B 站视频 · 点击一次播放</span></div>
+    ${biliFrameInline(v.bv)}
     <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
     <div class="vc-hint">来源 B 站 · 内容相关推荐</div>
   </div>`;
@@ -175,11 +174,10 @@ function dailyData(sec){
 /* 新抓到的视频，样式与配套视频卡一致，点击同样在卡内播放 */
 function freshVideoCard(v){
   if(!v||!v.bv) return '';
-  const cover=v.cover?` style="background-image:url('${safeCover(v.cover)}')"`:'';
   const play=v.play>10000?(Math.round(v.play/10000*10)/10+'万播放'):(v.play?v.play+'播放':'');
   return `<div class="vcard" data-bv="${esc(v.bv)}">
-    <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>点击在这里播放</span></div>
-    <div class="vc-thumb"${cover}></div>
+    <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>B 站视频 · 点击一次播放</span></div>
+    ${biliFrameInline(v.bv)}
     <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
     <div class="vc-hint">${play?esc(play)+' · ':''}来源 B 站 · 今日抓取</div>
   </div>`;
@@ -1293,14 +1291,7 @@ function bindCommon(){
   });
   v.querySelectorAll('[data-say]').forEach(b=>{ if(!b.onclick) b.onclick=()=>speak(b.dataset.say,'en-US'); });
 
-  /* 视频卡：点击在内容中加载 B 站播放器 */
-  v.querySelectorAll('.vcard').forEach(el=>{
-    el.onclick=()=>{
-      if(el.dataset.loaded) return;
-      el.dataset.loaded='1';
-      el.innerHTML=biliIframe(el.dataset.bv);
-    };
-  });
+  /* 视频卡现在直接内嵌 B 站播放器，播放键即 B 站原生键，点击一次即可播放（无需再懒加载） */
 
   /* 表达练习：中文跟读 */
   if(currentId()==='speech'){

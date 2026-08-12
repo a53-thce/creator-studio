@@ -634,13 +634,8 @@ ul{margin:0;padding:0;list-style:none}
   background:linear-gradient(135deg,#E4657A,#C8384B);color:#fff;
   font-size:10px;font-weight:600;padding:2px 8px;border-radius:9px;
 }
-.vc-thumb{
-  position:relative;aspect-ratio:16/9;background:#1c1c1f center/cover no-repeat;
-  display:flex;align-items:center;justify-content:center;margin-top:8px;
-}
-.vc-thumb::after{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,.42) 100%);
+.vc-frame-wrap{
+  position:relative;aspect-ratio:16/9;background:#000;margin-top:8px;
 }
 .vc-meta{padding:9px 12px 3px;display:flex;flex-direction:column;gap:3px}
 .vc-t{
