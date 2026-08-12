@@ -645,13 +645,10 @@ ul{margin:0;padding:0;list-style:none}
 .vc-play{
   position:relative;z-index:1;width:48px;height:48px;border-radius:50%;
   background:rgba(255,255,255,.92);display:grid;place-items:center;
+  color:var(--red);font-size:22px;line-height:1;padding-left:3px;
   box-shadow:0 4px 14px rgba(0,0,0,.3);transition:transform .15s;
 }
 .vcard:active .vc-play{transform:scale(.9)}
-.vc-play::before{
-  content:"";width:0;height:0;margin-left:3px;
-  border-left:15px solid var(--red);border-top:9px solid transparent;border-bottom:9px solid transparent;
-}
 .vc-meta{padding:9px 12px 3px;display:flex;flex-direction:column;gap:3px}
 .vc-t{
   font-size:13.5px;line-height:1.45;color:var(--txt);font-weight:600;
