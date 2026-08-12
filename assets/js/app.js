@@ -141,8 +141,9 @@ function sectionIcon(sec){
 
 /* ---------------- 视频卡（真实 B 站视频，点击在内容中播放） ---------------- */
 const VIDEO_SECS=['speech','tcm','acup','book','style','viral','ai','baby','fit'];
-function biliFrameInline(bv){
-  return `<div class="vc-frame-wrap"><iframe class="vc-frame" src="https://player.bilibili.com/player.html?bvid=${esc(bv)}&page=1&high_quality=1&danmaku=0&autoplay=0" allow="autoplay; fullscreen; encrypted-media" allowfullscreen="true" scrolling="no" frameborder="0" loading="lazy"></iframe></div>`;
+/* 点击封面后才加载的 B 站播放器（用户手势触发，autoplay 在多数 webview 可放行） */
+function biliIframeAuto(bv){
+  return `<iframe class="vc-frame" src="https://player.bilibili.com/player.html?bvid=${esc(bv)}&page=1&high_quality=1&danmaku=0&autoplay=1" allow="autoplay; fullscreen; encrypted-media" allowfullscreen="true" scrolling="no" frameborder="0"></iframe>`;
 }
 function safeCover(u){ return (u||'').replace(/["'<>]/g,''); }
 function videoCard(sec,key){
@@ -155,9 +156,10 @@ function videoCard(sec,key){
     v=pool[Math.abs(hashStr(key||sec))%pool.length];
   }
   if(!v||!v.bv) return '';
+  const cover=v.cover?` style="background-image:url('${safeCover(v.cover)}')"`:'';
   return `<div class="vcard" data-bv="${esc(v.bv)}">
-    <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>B 站视频 · 点击一次播放</span></div>
-    ${biliFrameInline(v.bv)}
+    <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>点击封面播放</span></div>
+    <div class="vc-cover"${cover} data-bv="${esc(v.bv)}">${v.cover?'':'<span class="vc-cover-tip">B站视频</span>'}</div>
     <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
     <div class="vc-hint">来源 B 站 · 内容相关推荐</div>
   </div>`;
@@ -175,9 +177,10 @@ function dailyData(sec){
 function freshVideoCard(v){
   if(!v||!v.bv) return '';
   const play=v.play>10000?(Math.round(v.play/10000*10)/10+'万播放'):(v.play?v.play+'播放':'');
+  const cover=v.cover?` style="background-image:url('${safeCover(v.cover)}')"`:'';
   return `<div class="vcard" data-bv="${esc(v.bv)}">
-    <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>B 站视频 · 点击一次播放</span></div>
-    ${biliFrameInline(v.bv)}
+    <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>点击封面播放</span></div>
+    <div class="vc-cover"${cover} data-bv="${esc(v.bv)}">${v.cover?'':'<span class="vc-cover-tip">B站视频</span>'}</div>
     <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
     <div class="vc-hint">${play?esc(play)+' · ':''}来源 B 站 · 今日抓取</div>
   </div>`;
@@ -1413,6 +1416,17 @@ function init(){
   $('#footNote').textContent='自媒体创作工作台 · 数据保存在本机 · '+TODAY;
   _dailySig=dailySig(window.DAILY);   // 记录初始签名，避免首次重复刷新
   render();
+  /* 视频卡：默认显示封面，点击封面（用户手势）内嵌 B 站播放器并自动播放 */
+  document.addEventListener('click', e=>{
+    const card=e.target.closest('.vcard[data-bv]');
+    if(!card) return;
+    const cover=card.querySelector('.vc-cover[data-bv]');
+    if(!cover||cover.dataset.loaded) return;
+    cover.dataset.loaded='1';
+    cover.classList.add('is-playing');
+    cover.innerHTML=biliIframeAuto(card.dataset.bv);
+    e.stopPropagation();
+  });
   /* 每 5 分钟静默检查一次每日新内容（后台标签页也会生效） */
   setInterval(()=>refreshDaily(true), 5*60*1000);
   /* 后台预热天气与新闻缓存 */

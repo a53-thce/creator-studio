@@ -634,9 +634,17 @@ ul{margin:0;padding:0;list-style:none}
   background:linear-gradient(135deg,#E4657A,#C8384B);color:#fff;
   font-size:10px;font-weight:600;padding:2px 8px;border-radius:9px;
 }
-.vc-frame-wrap{
-  position:relative;aspect-ratio:16/9;background:#000;margin-top:8px;
+.vc-cover{
+  position:relative;aspect-ratio:16/9;background:#1c1c1f center/cover no-repeat;
+  margin-top:8px;cursor:pointer;overflow:hidden;
 }
+.vc-cover::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,.45) 100%);
+}
+.vc-cover.is-playing::after{display:none}
+.vc-cover-tip{position:absolute;inset:0;z-index:1;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:600;letter-spacing:.5px}
+.vc-cover iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .vc-meta{padding:9px 12px 3px;display:flex;flex-direction:column;gap:3px}
 .vc-t{
   font-size:13.5px;line-height:1.45;color:var(--txt);font-weight:600;
@@ -644,7 +652,7 @@ ul{margin:0;padding:0;list-style:none}
 }
 .vc-up{font-size:11.5px;color:var(--txt3)}
 .vc-hint{padding:0 12px 11px;font-size:11px;color:var(--txt3)}
-.vc-frame{width:100%;aspect-ratio:16/9;border:0;display:block;background:#000}
+.vc-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000}
 
 /* ---------- 今日新增（每日自动抓取的真实新内容） ---------- */
 .daily-box{
