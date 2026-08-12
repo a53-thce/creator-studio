@@ -162,11 +162,10 @@ function videoCard(sec,key){
     v=pool[Math.abs(hashStr(key||sec))%pool.length];
   }
   if(!v||!v.bv) return '';
-  const cover=v.cover?` style="background-image:url('${safeCover(v.cover)}')"`:'';
   const inline=videoUseInline();
   const media = inline
     ? `<div class="vc-frame-wrap">${biliIframeAuto(v.bv,false)}</div>`
-    : `<div class="vc-cover"${cover} data-bv="${esc(v.bv)}">${v.cover?'':'<span class="vc-cover-tip">B站视频</span>'}</div>`;
+    : `<div class="vc-cover" data-bv="${esc(v.bv)}">${v.cover?`<img class="vc-cover-img" src="${safeCover(v.cover)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<span class="vc-cover-tip">▶ 点击播放</span></div>`;
   return `<div class="vcard" data-bv="${esc(v.bv)}">
     <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>${inline?'B 站视频 · 直接播放':'点击封面播放'}</span></div>
     ${media}
@@ -187,11 +186,10 @@ function dailyData(sec){
 function freshVideoCard(v){
   if(!v||!v.bv) return '';
   const play=v.play>10000?(Math.round(v.play/10000*10)/10+'万播放'):(v.play?v.play+'播放':'');
-  const cover=v.cover?` style="background-image:url('${safeCover(v.cover)}')"`:'';
   const inline=videoUseInline();
   const media = inline
     ? `<div class="vc-frame-wrap">${biliIframeAuto(v.bv,false)}</div>`
-    : `<div class="vc-cover"${cover} data-bv="${esc(v.bv)}">${v.cover?'':'<span class="vc-cover-tip">B站视频</span>'}</div>`;
+    : `<div class="vc-cover" data-bv="${esc(v.bv)}">${v.cover?`<img class="vc-cover-img" src="${safeCover(v.cover)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<span class="vc-cover-tip">▶ 点击播放</span></div>`;
   return `<div class="vcard" data-bv="${esc(v.bv)}">
     <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>${inline?'B 站视频 · 直接播放':'点击封面播放'}</span></div>
     ${media}
