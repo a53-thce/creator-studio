@@ -1,5 +1,5 @@
 /* 服务工作者：缓存应用外壳，让工作台可离线使用；API 走网络优先 + 缓存兜底 */
-const CACHE = 'mcw-shell-v31';
+const CACHE = 'mcw-shell-v33';
 /* 注意：data-daily.js 不放进 SHELL 预缓存，否则安装时会冻一份旧快照；
    它只走 FRESH 网络优先（见下方），每天都会被重新拉取 */
 const SHELL = [
@@ -33,43 +33,41 @@ self.addEventListener('activate', e => {
   );
 });
 
+/* 网络优先：用于 API 与每日更新的数据文件。拿不到时回落缓存（永不返回 undefined）。 */
+function networkFirst(req) {
+  return fetch(req, { cache: 'no-store' })
+    .then(r => {
+      const copy = r.clone();
+      caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+      return r;
+    })
+    .catch(() => caches.match(req).then(hit => hit || caches.match('./index.html')));
+}
+
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (API.some(h => url.hostname.includes(h))) {
-    e.respondWith(
-      fetch(e.request)
-        .then(r => {
-          const copy = r.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
-          return r;
-        })
-        .catch(() => caches.match(e.request))
-    );
+    e.respondWith(networkFirst(e.request));
     return;
   }
   if (e.request.method !== 'GET') return;
-  // 每日更新的数据文件：先拿网络最新版，拿不到再回落缓存（离线可用）
+  // 每日更新的数据文件：网络优先，拿不到回落缓存
   if (FRESH.some(p => url.pathname.endsWith(p))) {
-    e.respondWith(
-      fetch(e.request, { cache: 'no-store' })
+    e.respondWith(networkFirst(e.request));
+    return;
+  }
+  // 外壳文件（index.html/app.js/style.css 等）：缓存优先 + 后台静默更新。
+  // 这样即使网络/SW 取数异常，页面也能从缓存秒开，绝不会出现“打不开”；
+  // 新版本通过 CACHE 版本号升级 + 注册时 reg.update() 自动生效（见 index.html）。
+  e.respondWith(
+    caches.match(e.request).then(hit =>
+      hit || fetch(e.request, { cache: 'no-store' })
         .then(r => {
           const copy = r.clone();
           caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
           return r;
         })
-        .catch(() => caches.match(e.request))
-    );
-    return;
-  }
-  // 外壳文件（index.html/app.js/style.css 等）：网络优先，离线才回落缓存。
-  // 这样每次打开都会拉最新版，旧的“冻住”页面问题不再发生（仍保留离线兜底）。
-  e.respondWith(
-    fetch(e.request, { cache: 'no-store' })
-      .then(r => {
-        const copy = r.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
-        return r;
-      })
-      .catch(() => caches.match(e.request).then(hit => hit || caches.match('./index.html')))
+        .catch(() => caches.match('./index.html'))
+    )
   );
 });
