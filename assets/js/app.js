@@ -141,8 +141,12 @@ function sectionIcon(sec){
 
 /* ---------------- 视频卡（真实 B 站视频，点击在内容中播放） ---------------- */
 const VIDEO_SECS=['speech','tcm','acup','book','style','viral','ai','baby','fit'];
-/* 视频卡：纯本地样式卡片（永远不黑、不依赖 B 站图床/播放器），点击跳转到 B 站观看 */
+/* 视频卡：直接在卡内内嵌 B 站播放器 + 封面（红渐变兜底，绝不黑屏） */
 function safeCover(u){ return (u||'').replace(/["'<>]/g,''); }
+function biliFrameEmbed(bv, cover){
+  const poster = cover ? `<img class="vc-poster-img" src="${safeCover(cover)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
+  return `<div class="vc-frame-wrap">${poster}<iframe class="vc-frame" src="https://player.bilibili.com/player.html?bvid=${esc(bv)}&page=1&high_quality=1&danmaku=0&autoplay=0" referrerpolicy="no-referrer" allow="autoplay; fullscreen; encrypted-media" allowfullscreen="true" scrolling="no" frameborder="0"></iframe></div>`;
+}
 function videoCard(sec,key){
   if(VIDEO_SECS.indexOf(sec)<0) return '';
   /* 优先取与这条内容主题一致的视频，取不到再用栏目兜底池 */
@@ -153,13 +157,12 @@ function videoCard(sec,key){
     v=pool[Math.abs(hashStr(key||sec))%pool.length];
   }
   if(!v||!v.bv) return '';
-  const burl='https://www.bilibili.com/video/'+v.bv;
-  return `<a class="vcard vlink" href="${burl}" target="_blank" rel="noopener">
-    <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>在 B 站观看</span></div>
-    <div class="vc-poster"><span class="vc-play-ico">▶</span></div>
+  return `<div class="vcard">
+    <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>B 站视频 · 卡内播放</span></div>
+    ${biliFrameEmbed(v.bv, v.cover)}
     <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
-    <div class="vc-hint">来源 B 站 · 点击前往观看</div>
-  </a>`;
+    <div class="vc-hint">来源 B 站 · 内容相关推荐</div>
+  </div>`;
 }
 
 /* ---------------- 今日新增（每日自动抓取的真实新内容） ---------------- */
@@ -170,17 +173,16 @@ function dailyData(sec){
   if((!d.vids||!d.vids.length)&&(!d.news||!d.news.length)) return null;
   return d;
 }
-/* 新抓到的视频，样式与配套视频卡一致，点击同样在卡内播放 */
+/* 新抓到的视频，与配套视频卡一致，直接在卡内内嵌播放器 */
 function freshVideoCard(v){
   if(!v||!v.bv) return '';
   const play=v.play>10000?(Math.round(v.play/10000*10)/10+'万播放'):(v.play?v.play+'播放':'');
-  const burl='https://www.bilibili.com/video/'+v.bv;
-  return `<a class="vcard vlink" href="${burl}" target="_blank" rel="noopener">
-    <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>在 B 站观看</span></div>
-    <div class="vc-poster"><span class="vc-play-ico">▶</span></div>
+  return `<div class="vcard">
+    <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>B 站视频 · 卡内播放</span></div>
+    ${biliFrameEmbed(v.bv, v.cover)}
     <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
     <div class="vc-hint">${play?esc(play)+' · ':''}来源 B 站 · 今日抓取</div>
-  </a>`;
+  </div>`;
 }
 function dailyBox(sec){
   const d=dailyData(sec); if(!d) return '';
