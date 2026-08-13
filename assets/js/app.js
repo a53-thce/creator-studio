@@ -153,11 +153,17 @@ function biliFrameAuto(bv){
 }
 /* B 站视频页地址（点按在 App 内打不开时，用它跳到系统浏览器 / 新窗口播放） */
 function biliWatchUrl(bv){ return 'https://www.bilibili.com/video/'+encodeURIComponent(bv); }
-/* 在 agentos 这类 App 内嵌 WebView 中，跨域 iframe（player.bilibili.com）会被内核拦截，
-   表现为红屏/点不开；而顶层跳转到 B 站页面（www.bilibili.com）是允许的。
-   因此：能内嵌的环境（GitHub Pages、本地、普通浏览器）继续卡内播放；
-   被拦截的环境（agentos App）改为打开 B 站视频页，保证一定能看。 */
-function canEmbed(){ try{ return !/agentos/i.test(location.hostname); }catch(e){ return true; } }
+/* 在 agentos / WorkBuddy 这类 App 内嵌 WebView 中，跨域 iframe（player.bilibili.com）
+   会被内核拦截，表现为红屏/点不开；而顶层跳转到 B 站页面（www.bilibili.com）是允许的。
+   因此：只在“确定能内嵌”的环境（GitHub Pages、本地）卡内播放；
+   其它所有托管（含 agentos-app.net、*.workbuddy.link 等 App WebView）一律改为
+   打开 B 站视频页，保证一定能看，绝不出现红屏。 */
+function canEmbed(){
+  try{
+    const h=location.hostname;
+    return h.endsWith('github.io') || h==='localhost' || h==='127.0.0.1' || h==='';
+  }catch(e){ return false; }
+}
 function openBili(bv){
   const url=biliWatchUrl(bv);
   try{ const w=window.open(url,'_blank','noopener'); if(!w) location.href=url; }
