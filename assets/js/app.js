@@ -149,21 +149,16 @@ function biliCover(bv, cover){
   return `<div class="vc-cover" data-bv="${esc(bv)}">${img}<span class="vc-play-ico">▶</span></div>`;
 }
 function biliFrameAuto(bv){
-  return `<iframe class="vc-frame" src="https://player.bilibili.com/player.html?bvid=${esc(bv)}&page=1&high_quality=1&danmaku=0&autoplay=1" referrerpolicy="no-referrer" allow="autoplay; fullscreen; encrypted-media" allowfullscreen="true" scrolling="no" frameborder="0"></iframe>`;
+  const url='https://www.bilibili.com/video/'+encodeURIComponent(bv);
+  return `<iframe class="vc-frame" src="https://player.bilibili.com/player.html?bvid=${esc(bv)}&page=1&high_quality=1&danmaku=0&autoplay=1" referrerpolicy="no-referrer" allow="autoplay; fullscreen; encrypted-media" allowfullscreen="true" scrolling="no" frameborder="0"></iframe>
+    <a class="vc-fallback" href="${url}" target="_blank" rel="noopener">▶ 打不开？点此在 B 站打开</a>`;
 }
 /* B 站视频页地址（点按在 App 内打不开时，用它跳到系统浏览器 / 新窗口播放） */
 function biliWatchUrl(bv){ return 'https://www.bilibili.com/video/'+encodeURIComponent(bv); }
-/* 在 agentos / WorkBuddy 这类 App 内嵌 WebView 中，跨域 iframe（player.bilibili.com）
-   会被内核拦截，表现为红屏/点不开；而顶层跳转到 B 站页面（www.bilibili.com）是允许的。
-   因此：只在“确定能内嵌”的环境（GitHub Pages、本地）卡内播放；
-   其它所有托管（含 agentos-app.net、*.workbuddy.link 等 App WebView）一律改为
-   打开 B 站视频页，保证一定能看，绝不出现红屏。 */
-function canEmbed(){
-  try{
-    const h=location.hostname;
-    return h.endsWith('github.io') || h==='localhost' || h==='127.0.0.1' || h==='';
-  }catch(e){ return false; }
-}
+/* 视频卡统一在卡内内嵌 B 站播放器（点封面即播放，不做环境分流）。
+   若所在 App WebView 拦截了 player.bilibili.com，请把 bilibili.com / player.bilibili.com
+   加入 App 业务域名白名单；否则 iframe 会红屏，此时卡片底部的「在 B站 打开」链接仍可救场。 */
+function canEmbed(){ return true; }
 function openBili(bv){
   const url=biliWatchUrl(bv);
   try{ const w=window.open(url,'_blank','noopener'); if(!w) location.href=url; }
@@ -1440,20 +1435,13 @@ function init(){
   $('#footNote').textContent='自媒体创作工作台 · 数据保存在本机 · '+TODAY;
   _dailySig=dailySig(window.DAILY);   // 记录初始签名，避免首次重复刷新
   render();
-  /* 视频卡：默认显示封面。点击时分流——
-     能内嵌的环境：在卡内加载 B 站播放器并自动播放；
-     被 App WebView 拦截的环境（agentos）：改为打开 B 站视频页，避免红屏/点不开 */
+  /* 视频卡：默认显示封面，点击封面（用户手势）在卡内加载 B 站播放器并自动播放，
+     全环境统一内嵌；iframe 加载失败时卡片底部的「在 B 站打开」链接可救场 */
   document.addEventListener('click', e=>{
     const cover=e.target.closest('.vc-cover[data-bv]');
-    if(!cover) return;
-    const bv=cover.dataset.bv;
-    if(canEmbed()){
-      if(cover.dataset.loaded) return;
-      cover.dataset.loaded='1';
-      cover.innerHTML=biliFrameAuto(bv);
-    } else {
-      openBili(bv);
-    }
+    if(!cover || cover.dataset.loaded) return;
+    cover.dataset.loaded='1';
+    cover.innerHTML=biliFrameAuto(cover.dataset.bv);
     e.stopPropagation();
   });
   /* 每 5 分钟静默检查一次每日新内容（后台标签页也会生效） */

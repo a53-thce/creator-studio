@@ -649,6 +649,14 @@ ul{margin:0;padding:0;list-style:none}
 }
 .vc-cover:active .vc-play-ico{transform:scale(.92)}
 .vc-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000;z-index:1}
+/* 播放器加载失败（如 App WebView 拦截 B站域名）时的兜底入口，浮于播放器底部，始终可点 */
+.vc-fallback{
+  position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:3;
+  font-size:12px;color:#fff;background:rgba(0,0,0,.55);padding:6px 13px;border-radius:20px;
+  text-decoration:none;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);white-space:nowrap;
+  box-shadow:0 3px 10px rgba(0,0,0,.35);
+}
+.vc-fallback:active{background:rgba(0,0,0,.78)}
 .vc-meta{padding:9px 12px 3px;display:flex;flex-direction:column;gap:3px}
 .vc-t{
   font-size:13.5px;line-height:1.45;color:var(--txt);font-weight:600;
