@@ -635,12 +635,20 @@ ul{margin:0;padding:0;list-style:none}
   font-size:10px;font-weight:600;padding:2px 8px;border-radius:9px;
 }
 .vcard.vlink{text-decoration:none;color:inherit;display:block}
-.vc-frame-wrap{
-  position:relative;aspect-ratio:16/9;margin-top:8px;overflow:hidden;
-  background:linear-gradient(135deg,#C8384B 0%,#7e1f2c 100%);
+.vc-cover{
+  position:relative;aspect-ratio:16/9;margin-top:8px;overflow:hidden;cursor:pointer;
+  background:linear-gradient(135deg,#2a2a32 0%,#15151b 100%);
+  display:grid;place-items:center;
 }
 .vc-poster-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:0}
-.vc-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:transparent;z-index:1}
+.vc-cover::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.5) 100%)}
+.vc-play-ico{
+  position:relative;z-index:2;width:54px;height:54px;border-radius:50%;
+  background:var(--red);color:#fff;font-size:22px;line-height:54px;text-align:center;padding-left:3px;
+  box-shadow:0 6px 18px rgba(0,0,0,.4);transition:transform .12s;
+}
+.vc-cover:active .vc-play-ico{transform:scale(.92)}
+.vc-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000;z-index:1}
 .vc-meta{padding:9px 12px 3px;display:flex;flex-direction:column;gap:3px}
 .vc-t{
   font-size:13.5px;line-height:1.45;color:var(--txt);font-weight:600;
