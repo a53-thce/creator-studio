@@ -131,7 +131,6 @@ function contentCard(sec,it,i){
       ${it.note?`<button class="plat" data-note="${esc(it.t)}">📝 笔记</button>`:''}
       <button class="fav-t ${on}" data-fav='${esc(JSON.stringify({key:key,sec:sec,t:it.t,s:it.s||'',k:it.k||'',plat:it.plat||[]}))}'>${on?'★':'☆'}</button>
     </div>
-    ${videoCard(sec, sec+'|'+it.t)}
   </article>`;
 }
 function sectionIcon(sec){
@@ -139,51 +138,8 @@ function sectionIcon(sec){
   return m[sec]||'✨';
 }
 
-/* ---------------- 视频卡（真实 B 站视频，点击在内容中播放） ---------------- */
-const VIDEO_SECS=['speech','tcm','acup','book','style','viral','ai','baby','fit'];
-/* 视频卡：直接在卡内内嵌 B 站播放器 + 封面（红渐变兜底，绝不黑屏） */
+/* 封面/缩略图地址清洗（今日资讯、热闻等复用） */
 function safeCover(u){ return (u||'').replace(/["'<>]/g,''); }
-/* 默认显示封面（深色渐变+播放键，永不黑），点击后在用户手势内加载 B 站播放器并自动播放 */
-function biliCover(bv, cover){
-  const img = cover ? `<img class="vc-poster-img" src="${safeCover(cover)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
-  return `<div class="vc-cover" data-bv="${esc(bv)}">${img}<span class="vc-play-ico">▶</span></div>`;
-}
-function biliFrameAuto(bv){
-  const url='https://www.bilibili.com/video/'+encodeURIComponent(bv);
-  return `<iframe class="vc-frame" src="https://player.bilibili.com/player.html?bvid=${esc(bv)}&page=1&high_quality=1&danmaku=0&autoplay=1" referrerpolicy="no-referrer" allow="autoplay; fullscreen; encrypted-media" allowfullscreen="true" scrolling="no" frameborder="0"></iframe>
-    <a class="vc-fallback" href="${url}" target="_blank" rel="noopener">▶ 打不开？点此在 B 站打开</a>`;
-}
-/* B 站视频页地址（点按在 App 内打不开时，用它跳到系统浏览器 / 新窗口播放） */
-function biliWatchUrl(bv){ return 'https://www.bilibili.com/video/'+encodeURIComponent(bv); }
-/* 视频卡统一在卡内内嵌 B 站播放器（点封面即播放，不做环境分流）。
-   若所在 App WebView 拦截了 player.bilibili.com，请把 bilibili.com / player.bilibili.com
-   加入 App 业务域名白名单；否则 iframe 会红屏，此时卡片底部的「在 B站 打开」链接仍可救场。 */
-function canEmbed(){ return true; }
-function openBili(bv){
-  const url=biliWatchUrl(bv);
-  try{ const w=window.open(url,'_blank','noopener'); if(!w) location.href=url; }
-  catch(e){ location.href=url; }
-  toast('正在为你打开 B 站视频…');
-}
-function videoCard(sec,key){
-  if(VIDEO_SECS.indexOf(sec)<0) return '';
-  /* 优先取与这条内容主题一致的视频，取不到再用栏目兜底池 */
-  let v=(window.VIDEO_MAP||{})[key];
-  if(!v){
-    const pool=(window.VIDEOS||{})[sec]||[];
-    if(!pool.length) return '';
-    v=pool[Math.abs(hashStr(key||sec))%pool.length];
-  }
-  if(!v||!v.bv) return '';
-  const emb=canEmbed();
-  return `<div class="vcard">
-    <div class="vc-head"><span class="vc-tag">📺 配套视频</span><span>B 站视频 · ${emb?'点击播放':'点按打开'}</span></div>
-    ${biliCover(v.bv, v.cover)}
-    <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
-    <div class="vc-hint">${emb?'来源 B 站 · 内容相关推荐':'来源 B 站 · 点按前往观看'}</div>
-  </div>`;
-}
-
 /* ---------------- 今日新增（每日自动抓取的真实新内容） ---------------- */
 function dailyData(sec){
   const D=window.DAILY;
@@ -192,22 +148,9 @@ function dailyData(sec){
   if((!d.vids||!d.vids.length)&&(!d.news||!d.news.length)) return null;
   return d;
 }
-/* 新抓到的视频，与配套视频卡一致，直接在卡内内嵌播放器 */
-function freshVideoCard(v){
-  if(!v||!v.bv) return '';
-  const play=v.play>10000?(Math.round(v.play/10000*10)/10+'万播放'):(v.play?v.play+'播放':'');
-  const emb=canEmbed();
-  return `<div class="vcard">
-    <div class="vc-head"><span class="vc-tag">🆕 今日新片</span><span>B 站视频 · ${emb?'点击播放':'点按打开'}</span></div>
-    ${biliCover(v.bv, v.cover)}
-    <div class="vc-meta"><span class="vc-t">${esc(v.t)}</span><span class="vc-up">📺 ${esc(v.up||'B站')}</span></div>
-    <div class="vc-hint">${play?esc(play)+' · ':''}来源 B 站 · ${emb?'今日抓取':'点按前往观看'}</div>
-  </div>`;
-}
 function dailyBox(sec){
   const d=dailyData(sec); if(!d) return '';
   const D=window.DAILY;
-  const vids=(d.vids||[]).slice(0,4).map(freshVideoCard).join('');
   const news=(d.news||[]).slice(0,3).map(n=>{
     const cov=n.cover?`<span class="dn-thumb" style="background-image:url('${safeCover(n.cover)}')"></span>`
       :`<span class="dn-thumb dn-thumb--ico">📰</span>`;
@@ -221,8 +164,6 @@ function dailyBox(sec){
     <div class="db-head"><span class="db-ico">🆕</span><b>今日新增</b>
       <span class="db-badge">${esc((D.date||'').slice(5))} 抓取</span></div>
     ${news?`<div class="dn-list">${news}</div>`:''}
-    ${vids}
-    ${vids?'':'<div class="tiny muted" style="padding:4px 2px">今天这个栏目的新视频还在路上～</div>'}
   </div>`;
 }
 /* 首页合辑：把当天各栏目抓到的新内容汇总成一张卡 */
@@ -234,7 +175,7 @@ function dailyDigest(){
       <span class="dg-body"><span class="dg-sec">${esc(it.name||'')}</span>
       <span class="dg-t">${esc(it.t||'')}</span></span>`;
     return it.type==='v'
-      ? `<button class="dg-item" data-go="${esc(it.sec)}">${inner}<span class="dg-go">看视频 ›</span></button>`
+      ? `<button class="dg-item" data-go="${esc(it.sec)}">${inner}<span class="dg-go">看内容 ›</span></button>`
       : `<a class="dg-item" href="${esc(it.url||'#')}" target="_blank" rel="noopener">${inner}<span class="dg-go">读原文 ›</span></a>`;
   }).join('');
   const stale=D.date&&D.date!==TODAY;
@@ -1435,15 +1376,6 @@ function init(){
   $('#footNote').textContent='自媒体创作工作台 · 数据保存在本机 · '+TODAY;
   _dailySig=dailySig(window.DAILY);   // 记录初始签名，避免首次重复刷新
   render();
-  /* 视频卡：默认显示封面，点击封面（用户手势）在卡内加载 B 站播放器并自动播放，
-     全环境统一内嵌；iframe 加载失败时卡片底部的「在 B 站打开」链接可救场 */
-  document.addEventListener('click', e=>{
-    const cover=e.target.closest('.vc-cover[data-bv]');
-    if(!cover || cover.dataset.loaded) return;
-    cover.dataset.loaded='1';
-    cover.innerHTML=biliFrameAuto(cover.dataset.bv);
-    e.stopPropagation();
-  });
   /* 每 5 分钟静默检查一次每日新内容（后台标签页也会生效） */
   setInterval(()=>refreshDaily(true), 5*60*1000);
   /* 后台预热天气与新闻缓存 */
